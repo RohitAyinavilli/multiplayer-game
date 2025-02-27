@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <h1>Hangman</h1>
+    <div id="word"></div>
+    <div id="guesses"></div>
+    <input type="text" id="guess" maxlength="1">
+    <button id="submitGuess">Guess</button>
+    <input type="text" id="wordInput" placeholder="Enter word" style="display:none">
+    <button id="submitWord" style="display:none">Submit</button>
+    
+    <script>
+        var socket = io();
+        var wordDiv = document.getElementById('word');
+        var guessesDiv = document.getElementById('guesses');
+        var guessInput = document.getElementById('guess');
+        var submitGuessButton = document.getElementById('submitGuess');
+        var wordInput = document.getElementById('wordInput');
+        var submitWordButton = document.getElementById('submitWord');
+
+        socket.on('connect', () => socket.emit('join hangman'));
+        socket.on('submit word', () => { wordInput.style.display = 'block'; submitWordButton.style.display = 'block'; });
+        socket.on('start guessing', () => { wordInput.style.display = 'none'; submitWordButton.style.display = 'none'; guessInput.disabled = false; submitGuessButton.disabled = false; });
+        socket.on('update word', word => { wordDiv.innerHTML = word.map(letter => `<span>${letter}</span>`).join(' '); });
+        socket.on('update guesses', guesses => { guessesDiv.textContent = 'Guesses: ' + guesses.join(', '); });
+        socket.on('game over', message => { alert(message); guessInput.disabled = true; submitGuessButton.disabled = true; });
+        socket.on('waiting for opponent', () => alert('Waiting for opponent...'));
+        socket.on('game full', () => alert('Game is full. Try again later.'));
+
+        submitGuessButton.addEventListener('click', () => {
+            var guess = guessInput.value;
+            if (guess) { socket.emit('make guess', guess); guessInput.value = ''; }
+        });
+        submitWordButton.addEventListener('click', () => {
+            var word = wordInput.value.trim();
+            if (word.length > 0) { socket.emit('submit word', word); wordInput.value = ''; }
+        });
+    </script>
+</body>
+</html>

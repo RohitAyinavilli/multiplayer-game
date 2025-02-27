@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="tictactoe.css">
+</head>
+<body>
+    <h1>Tic-Tac-Toe</h1>
+    <div class="board" id="board"></div>
+    <script>
+        var socket = io();
+        var boardDiv = document.getElementById('board');
+        var currentPlayer;
+
+        function createBoard() {
+            boardDiv.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                let cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => makeMove(i));
+                boardDiv.appendChild(cell);
+            }
+        }
+
+        function makeMove(index) {
+            socket.emit('make move', index);
+        }
+
+        socket.on('connect', () => socket.emit('join tictactoe'));
+        
+        socket.on('update board', (board, player) => {
+            currentPlayer = player;
+            document.querySelectorAll('.cell').forEach((cell, index) => {
+                cell.textContent = board[index];
+            });
+        });
+        
+        socket.on('game over', message => { alert(message); createBoard(); });
+        socket.on('reset game', createBoard);
+        socket.on('game started', createBoard);
+        socket.on('waiting for opponent', () => alert('Waiting for opponent...'));
+        socket.on('game full', () => alert('Game is full. Try again later.'));
+        
+        createBoard();
+    </script>
+</body>
+</html>
